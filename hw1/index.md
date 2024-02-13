@@ -3,7 +3,8 @@
 ## Edward Park
 
 ## Overview
-Give a high-level overview of what you implemented in this homework Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
+Give a high-level overview of what you implemented in this homework.
+Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework. 
 
 ## Section I: Rasterization
 ### Part 1: Rasterizing single-color triangles
