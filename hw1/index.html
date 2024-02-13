@@ -1,7 +1,75 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 1 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style>
+      body {
+        padding: 100px;
+        width: 1000px;
+        margin: auto;
+        text-align: left;
+        font-weight: 300;
+        font-family: 'Open Sans', sans-serif;
+        color: #121212;
+      }
+      h1, h2, h3, h4 {
+        font-family: 'Source Sans Pro', sans-serif;
+      }
+      table { 
+        border-collapse: collapse;
+      }
+      th {
+        border-top: solid 1px black;
+        border-bottom: solid 3px black;
+        border-left: solid 1px black;
+        border-right: solid 1px black;
+        padding: 5px 10px;
+      }
+      tr {
+        border-bottom: solid 1px black;
+      }
+      td {
+        padding: 5px 10px;
+        border-left: solid 1px black;
+        border-right: solid 1px black;
+      }
+      img[alt=smaller] { width: 600px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/texme/texme.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.js"></script>
+    <title>CS 184/284A Rasterizer</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+  </head>
+
+  <body>
+    <div id="markdown-content"></div>
+    <script defer>
+      const markdownFileUrl = './index.md';
+
+      async function fetchMarkdownContent(url) {
+        try {
+          const response = await fetch(url);
+          const text = await response.text();
+          return text;
+        } catch (error) {
+          console.error('Error fetching Markdown content:', error);
+          return '';
+        }
+      }
+
+      async function sleep(ms) {
+        await new Promise(r => setTimeout(r, ms));
+      }
+
+      window.texme.setOption('style', 'none');
+
+      fetchMarkdownContent(markdownFileUrl).then(markdownText => {
+        const container = document.getElementById('markdown-content');
+        container.innerHTML = window.texme.render(markdownText);
+      });
+
+      
+    </script>
+  </body>
+
 </html>
