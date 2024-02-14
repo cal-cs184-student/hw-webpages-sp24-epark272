@@ -1,10 +1,13 @@
 # CS 184/284A: Computer Graphics and Imaging, Spring 2024
 # Homework 1: Rasterizer
 ## Edward Park
+### [cal-cs184-student.github.io/hw-webpages-sp24-epark272/hw1](https://cal-cs184-student.github.io/hw-webpages-sp24-epark272/hw1/index.html)
+<!-- ### [graphics.edwardpark.org](https://graphics.edwardpark.org) -->
 
 ## Overview
-Give a high-level overview of what you implemented in this homework.
-Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework. 
+In this homework, I implemented a rasterizer that is able to support texturing, and which has a variety of antialiasing techniques. These techniques ranged from supersampling with different sampling techniques for the geometry drawn, to different pixel or level sampling methods for the interpolation of texture maps onto the drawn geometry. Being able to toggle these techniques on and off, and comparing the effects that each technique provides, is really useful for learning what each does.
+
+Throughout this homework, I've learned a lot about the pipeline from sampling to a sample buffer to the frame buffer. I've also learned how to calculate barycentric coordinates. One thing that I can carry forward is my newfound knowledge and familiarity with svgs, which I intend to use a lot more than jpgs/pngs in the future. Finally, I was able to explore (even if for a little bit) the vast depth of graphics techniques that have been developed over the years, which really excited me to see.
 
 ## Section I: Rasterization
 ### Part 1: Rasterizing single-color triangles
@@ -25,16 +28,17 @@ Here are a few examples of the rendered images:
 
 #### Extra credit: Optimizations
 
+I performed 2 optimization on the triangle vertex bounding box. The first is to factor out redundant arithmetic operations out of for loops and equations. The second was to perform a column-wise check if we had already seen filled pixels, and if so, then cull the rest of the pixels, even if they are within the bounding box. However, I ran into some issues where very skinny and tall triangles would leave gaps in a column of pixels, causing my algorithm to incorrectly cull some pixels and leave some artifacts. I combated this by preventing culling from happening if I detected that the triangle had 2 steep (slope > 1) edges, at the expense of some performance.
 
 #### Timing: Optimizations (average 10 times, ms)
-| File | Naive | Factoring Redundant Arithmetic Operations |
-|:---:|:---:|:---:| 
-| svg/basic/test3.svg | 8.054 | 7.760 |
-| svg/basic/test4.svg | 0.350 | 0.322 |
-| svg/basic/test5.svg | 1.044 | 1.004 |
-| svg/basic/test6.svg | 0.659 | 0.611 |
+| File | Naive | Factoring redundant arithmetic operations | Bounding box optimizations | Both optimizations |
+|:---:|:---:|:---:|:---:|:---:| 
+| svg/basic/test3.svg | 8.054 | 7.760 | 7.331 | 7.049 |
+| svg/basic/test4.svg | 0.350 | 0.322 | 0.348 | 0.319 |
+| svg/basic/test5.svg | 1.044 | 1.004 | 0.885 | 0.839 |
+| svg/basic/test6.svg | 0.659 | 0.611 | 0.539 | 0.508 |
 
-After performing an optimization for reducing the amount of redundant arithmetic operations, there was only marginal (< 10%) improvement.
+After performing an optimization for reducing the amount of redundant arithmetic operations, there was only a small amount (< 10%) improvement. However, with both optimizations applied, I was able to achieve a 10-15% speedup over the naive implementation.
 
 
 ### Part 2: Antialiasing triangles
@@ -118,13 +122,31 @@ It makes sense that there would be a large difference when the supersampling rat
 
 Level sampling is another part of texture mapping, where we choose the resolution of the mipmap according to different sampling methods.
 
+Much of the difficulty in implementing level sampling was populating the `SampleParams` struct, in particular `p_dx_uv` and `p_dy_uv`. Since these had to be the (u, v) coordinates of (x + 1, y) and (x, y + 1), respectively, I had to repeat a lot of work in calculating the barycentric coordinates and then calculating the texture space coordinates from there. I made small optimizations along the way, but I still think there might be room for more optimization.
+
+Furthermore, I calculated the nearest mipmap level $D$ according to
+$$D = \log_2{(\max(\sqrt{(\frac{du}{dx})^2 + (\frac{dv}{dx})^2}, \sqrt{(\frac{du}{dy})^2 + (\frac{dv}{dy})^2}))}$$
+Finally, I updated `Texture::sample` to account for the 3 different types of level sampling, including doing some linear interpolation for `L_LINEAR`. One tricky case that popped up is for `L_NEAREST`, you must clamp $D$ to be a non-negative integer, since mipmaps aren't generated for negative levels.
+
+Between the 3 sampling techniques of pixel sampling, level sampling, and supersampling, I think supersampling is by far the easiest to implement, at the expense of memory and speed. The antialiasing power is pretty decent for the amount of work put in. On the other hand, changing pixel sampling methods tend to make large differences when supersampling is not implemented, at a smaller memory cost. Combining both supersampling and bilinear interpolation for pixel sampling generally tends to produce a very good antialiased result. When adding on level sampling methods, particularly trilinear sampling, it can often produce a blur effect that can be undesirable. In other words, it is a little bit too aggressive in antialiasing, to the point of removing some of the image features. For this reason, trying to antialias with any and all possible methods seems to be not worth the resources (time and memory) spent, and instead we can compromise with a faster, more efficient antialiasing technique that still produces acceptable results.
+
 | Pixel / Level | P_NEAREST | P_LINEAR |
 |:---:|:---:|:---:|
 | L_ZERO | ![smaller](./images/task6_texmap_nearest_zero_ss1.png) | ![smaller](./images/task6_texmap_linear_zero_ss1.png) |
 | L_NEAREST | ![smaller](./images/task6_texmap_nearest_nearest_ss1.png) | ![smaller](./images/task6_texmap_linear_nearest_ss1.png) |
 | L_LINEAR | ![smaller](./images/task6_texmap_nearest_linear_ss1.png) | ![smaller](./images/task6_texmap_linear_linear_ss1.png) |
 
+The images shown above are the [Irworobongdo](https://en.wikipedia.org/wiki/Irworobongdo), a traditional Korean folding screen painting associated with royalty. With `P_NEAREST` and `L_ZERO`, the texture is clearly very pixelated, with lots of contrast between adjacent pixels. With `P_NEAREST` and `L_NEAREST`, though, much of the detail on the gold triangle is smoothed out, as well as the detail on the mountains in the background. With `P_NEAREST` and `L_LINEAR`, it is almost too blurry, as the gold triangle has lost almost all detail, and the detail on the mountains is much less prominent.
+
+With `P_LINEAR` and `L_ZERO`, there is less contrast that pops out compared to `P_NEAREST` and `L_ZERO`, but it still very much is has too much constrast in the details. The next image, `P_LINEAR` and `L_NEAREST` is a bit blurrier than I'd like, and `P_LIENAR` and `L_LINEAR` is even blurrier. If I had turned supersampling up to a sample rate of 16, the images would be even blurrier than they are now.
 
 ## Section III: Art Competition
-If you are not participating in the optional art competition, don't worry about this section!
 ### Part 7: Draw something interesting!
+
+For the art competition, I decided to draw a fractal-like triangle, modeled off the [Penrose triangle](https://en.wikipedia.org/wiki/Penrose_triangle).
+
+![](./images/competition.png)
+
+The `.svg` file can be found at [docs/competition.svg](./competition.svg), and the script I used to generate the image is found in [src/draw_competition.py](../src/draw_competition.py). The script's primary function is `write_svg`, which is responsible for calling all other functions and writing the resulting string to the svg file. From there, my main helper function is `draw_cube`, which can draw an isometric view of a cube with different colors for the top, left and right face. Furthermore, each face can be independently drawn or not drawn. These all append to a string that will be written at the end of `write_svg`.
+
+Using the `draw_cube` helper function, I have a lot of loops calling `draw_cube`. I also have a few other helper functions for some of the repeating patterns (the smaller triangles) that appear multiple times, because I did not want to copy and paste my code a bunch of times. Finally, the resulting string, allong with all the necessary headers needed in the svg file.
