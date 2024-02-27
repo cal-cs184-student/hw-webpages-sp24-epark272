@@ -13,14 +13,4 @@
 		<br><br>
 		<a href="./hw4/index.html">Homework 4</a>
 	</body>
-	<script>
-		var links = document.body.getElementsByTagName("a")
-		var a = window.location.href.indexOf(".io")
-		var repo_name = window.location.href.substring(a+3)
-		for(const element of links){
-			var link = element
-			var actual_name = link.href.substring(link.href.indexOf(".io")+4)
-			link.href = repo_name + actual_name
-		}
-	</script>
 </html>
