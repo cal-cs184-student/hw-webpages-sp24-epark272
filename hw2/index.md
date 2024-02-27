@@ -15,7 +15,7 @@ Along the way, I implemented a few extra credit features, mostly dealing with bo
 ### Part 1: Bezier curves with 1D de Casteljau subdivision
 de Casteljau's algorithm is an algorithm to evaluate a Bezier curve from a set of control points. It relies on iterative linear interpolation between adjacent control points across a parameterized range $t \in [0, 1]$. The linear interpolation is calculated as follows: $$p_i^{'} = (1-t)p_i + tp_{i+1}$$
 
-In part 1 of this homework, `BezierCurve::evaluateStep` only performs one step of de Casteljau's algorithm. Here is an example Bezier curve with 6 control points.
+In part 1 of this homework, `BezierCurve::evaluateStep` only performs one step of de Casteljau's algorithm. The implementation consists of iterating from `0` to `points.size() - 1` (to avoid going out of bounds), and then pushing the linear interpolation result to a `vector<Vector2D>`. Here is an example Bezier curve with 6 control points.
 
 ![smaller](./images/task1_bzc6_level0.png)
 ![smaller](./images/task1_bzc6_level5.png)
@@ -165,7 +165,7 @@ To demonstrate the boundary edges working properly, I used `dae/beetle.dae` and 
 ![smaller](./images/task5_beetle_original.png)
 ![smaller](./images/task5_beetle_split.png)
 
-During the implementation, I ran into a bugs with the order in which I was assigning `h3->next()` and `h6->next()`. I was able to identify and resolve this bug, however, by clicking on the mesh and observing that `h6->next()` was `h6`. I fixed this by maintaining a pointer to `h3Next = h3->next()` before reassigning `h3->next()`, then assigning `h6->next() = h3Next`. Fixing this bug made my implementation work properly. 
+During the implementation, I ran into a bug with the order in which I was assigning `h3->next()` and `h6->next()`. I was able to identify and resolve this bug, however, by clicking on the mesh and observing that `h6->next()` was `h6`. I fixed this by maintaining a pointer to `h3Next = h3->next()` before reassigning `h3->next()`, then assigning `h6->next() = h3Next`. Fixing this bug made my implementation work properly. 
 
 ### Part 6: Loop subdivision for mesh upsampling
 Implementing loop subdivision was the hardest part of this homework to implement. The overall logic was laid out for me in the comments of `MeshResampler::upsample` and the spec:
@@ -201,7 +201,7 @@ Pre-processing the cube made a huge difference to the overall outcome. Firstly, 
 
 The reason that asymmetric meshes resulted in an asymmetric limit surface is due to the way the old vertex positions are calculated. Specifically, in the case of the cube, the distance between vertices of diagonal edges that cut across a cube face are $\sqrt{2}$ times longer than the distance between vertices of edges that form the edges of the cube. This essentially results in an effect where vertices a higher degree gets pulled into the center more than vertices with a lower degree, causing the asymmetry. By pre-processing the mesh to be symmetric before any upsampling occurs, I make all symmetrically equivalent vertices have the same degree, meaning it gets affected equally.
 
-As for the pre-processing step of splitting edges, this reduced the rounding effect of sharp corners and edges simply because the average of the adjacent vertices is closer to the original position of the vertex, due to the adjacent vertices being closer to the original position of the vertex. This allows vertices on a sharp corner or edge to keep closer to it's original position.
+As for the pre-processing step of splitting edges, this reduced the rounding effect of sharp corners and edges simply because the average of the adjacent vertices is closer to the original position of the vertex, due to the adjacent vertices being closer to the original position of the vertex. This allows vertices on a sharp corner or edge to keep closer to its original position.
 
 #### Extra credit: Support meshes with boundary
 I implemented mesh upsampling with boundary edges. I did not have to implement too many changes to `HalfedgeMesh::upsample`. The relevant changes occured in steps 2 and 3, where:
@@ -238,7 +238,7 @@ For the actual implementation, I defined a new function in `student_code.h` call
 Then in `MeshResampler::upsample`, I did the following:
 1. Comment out all code relating to loop subdivision
 2. Iterate through all faces, edges, and vertices in the mesh, setting their `isNew` attribute to `false`
-3. Call `HalfedgeMesh::triadicSplit` on all faces. The new position of the vertex is calculated inside this function, with $$\texttt{v3->position} = \frac{1}{3} \sum_{i=0}^{2}\texttt{v}_i\texttt{->position}$$
+3. Call `HalfedgeMesh::triadicSplit` on all faces. The position of the new vertex is calculated inside this function, with $$\texttt{v3->position} = \frac{1}{3} \sum_{i=0}^{2}\texttt{v}_i\texttt{->position}$$
 4. Calculate updated old vertex positions, using $$\texttt{v->newPosition} = (1 - a_n) \times \texttt{v->position} + a_n \frac{1}{n} \sum_{i=0}^{n-1}\texttt{neighbor}_i\texttt{->position}$$ where $n$ is the degree of $v$ and $a_n = \frac{4 - 2 \cos{\frac{2 \pi}{n}}}{9}$
 5. Update all old vertex positions
 
