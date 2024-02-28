@@ -1,5 +1,5 @@
 # CS 184/284A: Computer Graphics and Imaging, Spring 2024
-# Homework 2: Meshedit
+# Homework 2: MeshEdit
 ## Edward Park
 ### [cal-cs184-student.github.io/hw-webpages-sp24-epark272/hw2](https://cal-cs184-student.github.io/hw-webpages-sp24-epark272/hw2/index.html)
 <!-- ### [graphics.edwardpark.org](https://graphics.edwardpark.org) -->
@@ -12,7 +12,7 @@ In the second part of the homework, I used the halfedge data structure to manipu
 Along the way, I implemented a few extra credit features, mostly dealing with boundary cases in edge splitting and mesh upsampling. I also implemented a completely different mesh upsampling scheme. Seeing all the different subdivision schemes and reading the papers (including for the subdivision algorithms that I didn't implement such as Catmull-Clark and modified Butterfly) gave me an appreciation for the variety of different solutions that researches have come up with to solve the same problem. It also amazed me that many of the common algorithms use seemingly arbitrary weights when calculating updated vertex positions, empirically tested but not mathematically proven.
 
 ## Section I: Bezier Curves and Surfaces
-### Part 1: Bezier curves with 1D de Casteljau subdivision
+### Part 1: Bezier Curves with 1D de Casteljau Subdivision
 de Casteljau's algorithm is an algorithm to evaluate a Bezier curve from a set of control points. It relies on iterative linear interpolation between adjacent control points across a parameterized range $t \in [0, 1]$. The linear interpolation is calculated as follows: $$p_i^{'} = (1-t)p_i + tp_{i+1}$$
 
 In part 1 of this homework, `BezierCurve::evaluateStep` only performs one step of de Casteljau's algorithm. The implementation consists of iterating from `0` to `points.size() - 1` (to avoid going out of bounds), and then pushing the linear interpolation result to a `vector<Vector2D>`. Here is an example Bezier curve with 6 control points.
@@ -40,7 +40,7 @@ I can also move around the control points by dragging them, and modify the value
 ![smallest](./images/task1_bzc7_t5.png)
 ![smallest](./images/task1_bzc7_t6.png)
 
-### Part 2: Bezier surfaces with separable 1D de Casteljau
+### Part 2: Bezier Surfaces with Separable 1D de Casteljau
 de Casteljau's algorithm can be applied to Bezier surfaces as well! How it works is that there is a cage of control points, called a control cage. Then, along the rows of the control cage, we can use the 1D de Casteljau algorithm to evaluate a Bezier (control) curve for each parameter value $u$. Then, for each parameter value $v$ along the columns, you can use the de Casteljau algorithms to evaluate a Bezier curve along the control curve. This finally creates a Bezier surface.
 
 I implemented this by filling in `BezierPatch::evaluateStep`, which in my implementation is exactly the same as `BezierCurve::evaluateStep`, with the exception of using `Vector3D` instead of `Vector2D`. Then, `BezierPatch::evaluate1D` iteratively calls `BezierPatch::evaluateStep` until there is 1 intermediate point left, which will be the final control point on each control curve for a given parameter $t$. The final step is to call `BezierPatch::evaluate1D` inside `BezierPatch::evaluate` with the passed-in parameter $u$, saving each of the intermediate values in a `vector<Vector3D>`, and finally call `BezierPatch::evaluate1D` on those intermediate values to evaluate it at parameter $v$.
@@ -51,7 +51,7 @@ Here is `bez/teapot.bez`, with and without wireframes:
 ![smaller](./images/task2_teapot_no_wireframe.png)
 
 ## Section II: Triangle Meshes and Half-Edge Data Structure
-### Part 3: Area-weighted vertex normals
+### Part 3: Area-Weighted Vertex Normals
 The challenges with implementing this task was firstly understanding how to use the `Halfedge` data structure, and secondly how to calculate the area of the triangle.
 
 For traversing the adjacent triangles around the vertex, I maintained a pointer to `h = halfedge()`, then called `h = h->twin()->next()` to move to the next triangle in a do-while loop. For each triangle face, I decided to calculate the area by using the following formula: $$A = \frac{||u \times v||}{2}$$
@@ -65,7 +65,7 @@ Using the vertex normals, we can implement Phong shading, which is a smoother wa
 ![smaller](./images/task3_teapot_flat.png)
 ![smaller](./images/task3_teapot_phong.png)
 
-### Part 4: Edge flip
+### Part 4: Edge Flip
 For the edge flip operation, I drew out all the halfedges, edges, vertices, and faces that are relevant for an edge flip. Then, I drew out a diagram of how each mesh element changes. Below on the left side, we see the mesh before an edge flip happens. On the right side, we see the mesh after we flip edge `e0`.
 
 <table style="border: none;">
@@ -89,7 +89,7 @@ For a demonstration of some of the edge flips, I used `dae/quadball.dae`. On the
 
 For this task, I didn't really experience any eventful debugging journeys. I think the reason I was able to avoid it was because of my implementation method, in which I reassigned all attributes before deleting the ones I did not need. Furthermore, I drew out the mesh and how it changed before implementing this task, solidifying my conceptual understanding of what I needed to do before writing any code.
 
-### Part 5: Edge split
+### Part 5: Edge Split
 My approach for implementing the edge split operation was very similar to my approach for the edge flip operation. My first step was to draw out the diagram to visualize how each mesh element changes. Below is the diagram that I based my implementation on.
 
 <table style="border: none;">
@@ -143,7 +143,7 @@ I also show `dae/torus/input.dae` through a series of flips and splits.
 
 Much like the previous task, I did not really experience much debugging, once again thanks to my meticulousness in implementing the reassignments correctly before deleting extraneous ones, as well as my solid conceptual understanding of how all mesh elements change.
 
-#### Extra credit: Support edge splits for boundary edges
+#### Extra Credit: Support Edge Splits for Boundary Edges
 I implemented edge splits for boundary edges. The first thing I did was to draw out a diagram of how the mesh elements changed for a boundary split. I have the diagram below, where on the left side is the mesh before the boundary split happens. The dark face, `f1`, represents the boundary face, which is not necessarily a triangle face. After the split happens, the mesh gets transformed to the right side, where notable the exterior halfedge `h3` gets split into `h3` and `h6`.
 
 <table style="border: none;">
@@ -167,7 +167,7 @@ To demonstrate the boundary edges working properly, I used `dae/beetle.dae` and 
 
 During the implementation, I ran into a bug with the order in which I was assigning `h3->next()` and `h6->next()`. I was able to identify and resolve this bug, however, by clicking on the mesh and observing that `h6->next()` was `h6`. I fixed this by maintaining a pointer to `h3Next = h3->next()` before reassigning `h3->next()`, then assigning `h6->next() = h3Next`. Fixing this bug made my implementation work properly. 
 
-### Part 6: Loop subdivision for mesh upsampling
+### Part 6: Loop Subdivision for Mesh Upsampling
 Implementing loop subdivision was the hardest part of this homework to implement. The overall logic was laid out for me in the comments of `MeshResampler::upsample` and the spec:
 1. Compute the updated old vertex positions, storing them in `v->newPosition`. The calculation is done by $$\texttt{v->newPosition} = (1 - nu) \times \texttt{v->position} + u \sum_{i=0}^{n-1}\texttt{neighbor}_i\texttt{->position}$$ where $n$ is the degree of $v$ and $u = \begin{cases} \frac{3}{16} & n = 3 \\ \frac{3}{8n} & n \neq 3 \end{cases}$
 2. Compute the new vertex positions, storing them in `e->newPosition`. This calculation is done by $$\begin{align*} \texttt{e->newPosition} =& \frac{3}{8} \texttt{(sum of e's vertex positions)} \\& + \frac{1}{8} \texttt{(sum of the opposite vertex positions for e's adjacent faces)} \end{align*}$$
@@ -203,7 +203,7 @@ The reason that asymmetric meshes resulted in an asymmetric limit surface is due
 
 As for the pre-processing step of splitting edges, this reduced the rounding effect of sharp corners and edges simply because the average of the adjacent vertices is closer to the original position of the vertex, due to the adjacent vertices being closer to the original position of the vertex. This allows vertices on a sharp corner or edge to keep closer to its original position.
 
-#### Extra credit: Support meshes with boundary
+#### Extra Credit: Support Meshes with Boundary
 I implemented mesh upsampling with boundary edges. I did not have to implement too many changes to `HalfedgeMesh::upsample`. The relevant changes occured in steps 2 and 3, where:
 1. If `v->isBoundary()`, the old vertex positions are updated with $$\texttt{v->newPosition} = \frac{3}{4} \times \texttt{v->position} + \frac{1}{8} \texttt{(sum of v's adjacent boundary vertices)}$$
 2. If `e->isBoundary()`, I calculated the new vertex positions `e->position` by doing $$\texttt{e->newPosition} = \frac{1}{2} \texttt{(sum of e's vertex positions)}$$
@@ -216,7 +216,7 @@ The rest of the `HalfedgeMesh::upsample` function stays the same.
 
 I did encounter some subtle bugs while implementing this feature. Notably, on the [B-pillar](https://en.wikipedia.org/wiki/Pillar_(car)) of the beetle, I calculated the wrong old vertex positions because I was adding all adjacent vertices that were on a boundary. Instead, I needed to add all vertices attached to adjacent boundary edges. Making this change ensured that the B-pillar of the beetle rendered properly.
 
-#### Extra credit: Implement additional subdivision schemes
+#### Extra Credit: Implement Additional Subdivision Schemes
 For the extra credit additional subdivision scheme, I decided to implement [$\sqrt{3}$-Subdivision](https://www.graphics.rwth-aachen.de/media/papers/sqrt31.pdf). The idea behind this subdivision scheme is that you insert a vertex into the middle of a triangular face, and connect the new vertex with the vertices of the triangle. Then, it flips all old edges.
 
 As with all my other implementations, I first drew out a diagram of what mesh elements were added and modified:
@@ -253,6 +253,6 @@ Below I compare the results of the $\sqrt{3}$ subdivision scheme with loop subdi
 There was only a small bit of difficulty in implementing this task. Namely, when splitting the faces into thirds, I could not figure out a good way of iterating through the faces without causing an infinite loop. I solved this problem by instead iterating over the edges, splitting each adjacent face only if the face was not new.
 
 ## Section III: Art Competition
-### Part 7: Draw something interesting!
+### Part 7: Model Something Interesting!
 
 Perhaps I will create something in Blender for extra credit, if I have energy.
